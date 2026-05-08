@@ -1,27 +1,33 @@
 from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from src.database.core import get_db
-from src.database.models import Job, Application, Notification
+from src.database.models import Job, Application, Notification, User
 from src.agents.graph import career_agent_workflow
+from src.auth.security import get_current_user
 from pydantic import BaseModel
 from typing import List, Optional
 
 router = APIRouter()
 
 class RunWorkflowRequest(BaseModel):
-    user_id: int = 1
+    # Optional now, since we get user from token
+    pass
 
 @router.get("/health")
 def health_check():
     return {"status": "healthy"}
 
 @router.post("/workflow/trigger")
-def trigger_agent_workflow(request: RunWorkflowRequest, background_tasks: BackgroundTasks):
+def trigger_agent_workflow(
+    request: RunWorkflowRequest, 
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user)
+):
     """
     Triggers the LangGraph workflow in the background.
     """
     initial_state = {
-        "user_id": request.user_id,
+        "user_id": current_user.id,
         "discovered_jobs": [],
         "filtered_jobs": [],
         "ranked_jobs": [],

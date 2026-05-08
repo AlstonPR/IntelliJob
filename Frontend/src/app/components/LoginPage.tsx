@@ -17,7 +17,9 @@ const DUMMY_PASSWORD = "demo1234";
 export function LoginPage() {
   const navigate = useNavigate();
   const cursor = useCursorGlow();
+  const [isRegistering, setIsRegistering] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
@@ -30,23 +32,48 @@ export function LoginPage() {
     { size: 100, x: "30%", y: "75%", color: "#ff9d7a", delay: 1.8 },
   ];
 
-  // TODO: Replace this entire function with real auth (Firebase/Supabase signIn)
-  const handleLogin = async () => {
+  const handleAuth = async () => {
     setError("");
     if (!email || !pass) {
       setError("Please enter your email and password.");
       return;
     }
+    if (isRegistering && !name) {
+      setError("Please enter your name.");
+      return;
+    }
+    
     setLoading(true);
-    // Temporary dummy authentication — any filled credentials succeed after a short delay
-    await new Promise((res) => setTimeout(res, 900));
-    // TODO: Replace below with: await signInWithEmailAndPassword(auth, email, password)
-    // or: await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false);
-    navigate("/dashboard");
+    
+    try {
+      const endpoint = isRegistering ? "http://127.0.0.1:8000/api/auth/register" : "http://127.0.0.1:8000/api/auth/login";
+      const payload = isRegistering 
+        ? { name, email, password: pass }
+        : { email, password: pass };
+        
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Authentication failed");
+      }
+
+      localStorage.setItem("token", data.access_token);
+      navigate("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "An error occurred during authentication.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // TODO: Replace with real Google OAuth (Firebase Google Sign-In / Supabase Google provider)
   const handleGoogle = () => {
     navigate("/dashboard");
   };
@@ -88,7 +115,6 @@ export function LoginPage() {
           />
         ))}
 
-        {/* Logo — UPLOAD LOGO HERE: see /src/app/components/Logo.tsx */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -168,26 +194,37 @@ export function LoginPage() {
         >
           <div className="mb-8">
             <h2 className="text-white mb-1" style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em" }}>
-              Welcome back
+              {isRegistering ? "Create an account" : "Welcome back"}
             </h2>
-            <p style={{ color: "#5a5a6e", fontSize: "0.9rem" }}>Sign in to your IntelliJob account</p>
+            <p style={{ color: "#5a5a6e", fontSize: "0.9rem" }}>
+              {isRegistering ? "Start your AI powered job search" : "Sign in to your IntelliJob account"}
+            </p>
           </div>
 
-          {/* Demo hint */}
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-            className="mb-4 px-3 py-2 rounded-lg"
-            style={{ background: "rgba(255,157,122,0.06)", border: "1px solid rgba(255,157,122,0.15)" }}
-          >
-            <p style={{ color: "#ff9d7a", fontSize: "0.72rem", lineHeight: 1.5 }}>
-              <span style={{ opacity: 0.6 }}>Demo: </span>
-              Any email + password will sign you in for UI testing.
-            </p>
-          </motion.div>
-
           <div className="space-y-4">
+            <AnimatePresence>
+              {isRegistering && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  animate={{ opacity: 1, height: "auto", marginBottom: 16 }}
+                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                >
+                  <label className="block mb-2 text-xs uppercase" style={{ color: "#5a5a6e", letterSpacing: "0.12em" }}>
+                    Name
+                  </label>
+                  <motion.input
+                    whileFocus={{ borderColor: "rgba(107,45,139,0.7)" }}
+                    type="text"
+                    value={name}
+                    onChange={(e) => { setName(e.target.value); setError(""); }}
+                    placeholder="Your Name"
+                    className="w-full outline-none"
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "12px 16px", color: "#fff", fontSize: "0.9rem", transition: "border-color 0.2s" }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Email */}
             <div>
               <label className="block mb-2 text-xs uppercase" style={{ color: "#5a5a6e", letterSpacing: "0.12em" }}>
@@ -218,7 +255,7 @@ export function LoginPage() {
                   placeholder="••••••••"
                   className="w-full outline-none pr-10"
                   style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "12px 16px", color: "#fff", fontSize: "0.9rem", transition: "border-color 0.2s" }}
-                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                  onKeyDown={(e) => e.key === "Enter" && handleAuth()}
                 />
                 <button
                   onClick={() => setShowPass(!showPass)}
@@ -250,7 +287,7 @@ export function LoginPage() {
             <motion.button
               whileHover={{ scale: 1.02, background: "#e8876a" }}
               whileTap={{ scale: 0.98 }}
-              onClick={handleLogin}
+              onClick={handleAuth}
               disabled={loading}
               className="w-full flex items-center justify-center gap-2 mt-2"
               style={{ background: "#ff6b35", color: "#fff", border: "none", borderRadius: 10, padding: "13px", fontSize: "0.95rem", fontWeight: 600, cursor: "pointer", transition: "background 0.2s", opacity: loading ? 0.7 : 1 }}
@@ -262,7 +299,7 @@ export function LoginPage() {
                   style={{ width: 18, height: 18, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%" }}
                 />
               ) : (
-                <>Continue <ArrowRight size={16} /></>
+                <>{isRegistering ? "Create Account" : "Sign In"} <ArrowRight size={16} /></>
               )}
             </motion.button>
 
@@ -273,7 +310,7 @@ export function LoginPage() {
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
             </div>
 
-            {/* Google — TODO: Connect real Google OAuth provider */}
+            {/* Google */}
             <motion.button
               whileHover={{ borderColor: "rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.06)" }}
               whileTap={{ scale: 0.98 }}
@@ -292,12 +329,15 @@ export function LoginPage() {
           </div>
 
           <p className="mt-6 text-center" style={{ color: "#3a3a4a", fontSize: "0.8rem" }}>
-            No account?{" "}
+            {isRegistering ? "Already have an account?" : "No account?"}{" "}
             <button
-              onClick={() => navigate("/")}
+              onClick={() => {
+                setIsRegistering(!isRegistering);
+                setError("");
+              }}
               style={{ color: "#ff9d7a", background: "none", border: "none", cursor: "pointer" }}
             >
-              Get started free
+              {isRegistering ? "Sign in" : "Get started free"}
             </button>
           </p>
         </motion.div>
