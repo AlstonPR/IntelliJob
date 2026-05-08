@@ -231,7 +231,7 @@ function HeroSection() {
       {/* Giant BG text */}
       <div
         className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden"
-        style={{ opacity: 0.065 }}
+        style={{ opacity: 0.04 }}
       >
         <span
           style={{

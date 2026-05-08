@@ -18,7 +18,7 @@
  */
 
 import { motion, AnimatePresence } from "motion/react";
-import { useState, ReactNode } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router";
 import {
   LayoutDashboard, Upload, Brain, Target, Bell, Settings,
@@ -259,11 +259,26 @@ function DashboardHome({ setActive }: { setActive: (id: string) => void }) {
     { label: "Resumes Ready", value: "3", delta: "AI-tailored", icon: FileCheck, color: "#ff9d7a" },
   ];
 
-  const approvedJobs = [
-    { role: "Product Designer", company: "Arc Browser", match: 97, salary: "$140k" },
-    { role: "ML Engineer", company: "Vercel", match: 93, salary: "$175k" },
-    { role: "UX Lead", company: "Figma", match: 88, salary: "$150k" },
-  ];
+  const [approvedJobs, setApprovedJobs] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchDashboardData() {
+      try {
+        const data = await IntelliJobAPI.getJobs();
+        // Map backend job schema to frontend UI expectations
+        const mapped = data.jobs.map((job: any) => ({
+          role: job.title,
+          company: job.company,
+          match: 95, // AI Match Score (placeholder until ranked_jobs API is exposed)
+          salary: "$130k", // Placeholder
+        }));
+        setApprovedJobs(mapped);
+      } catch (e) {
+        console.error("Failed to fetch jobs:", e);
+      }
+    }
+    fetchDashboardData();
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -634,12 +649,33 @@ function ApprovedJobsPanel() {
   // TODO: POST /api/apply?job_id=X — trigger Playwright auto-apply
   // TODO: POST /api/interview/questions?job_id=X — generate AI interview questions
 
-  const jobs = [
-    { role: "Senior Product Designer", company: "Arc Browser", salary: "$130k–$155k", match: 97, location: "Remote", status: "Ready to Apply", color: "#6b2d8b", appliedAt: null },
-    { role: "AI/ML Engineer", company: "Vercel", salary: "$170k–$200k", match: 93, location: "Hybrid · SF", status: "Applied", color: "#ff6b35", appliedAt: "May 7, 2025" },
-    { role: "UX Research Lead", company: "Figma", salary: "$140k–$165k", match: 88, location: "Remote", status: "Interview Scheduled", color: "#c4541a", appliedAt: "May 5, 2025" },
-    { role: "Design Engineer", company: "Linear", salary: "$155k–$185k", match: 86, location: "Remote", status: "Ready to Apply", color: "#8b1a1a", appliedAt: null },
-  ];
+  const [jobs, setJobs] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchJobsData() {
+      try {
+        const data = await IntelliJobAPI.getJobs();
+        const mapped = data.jobs.map((job: any, index: number) => {
+          const colors = ["#6b2d8b", "#ff6b35", "#c4541a", "#8b1a1a"];
+          return {
+            role: job.title,
+            company: job.company,
+            salary: "$130k–$155k", // Placeholder for now
+            match: 95, // AI Score placeholder
+            location: job.location || "Remote",
+            status: "Ready to Apply",
+            color: colors[index % colors.length],
+            appliedAt: null,
+            id: job.id
+          };
+        });
+        setJobs(mapped);
+      } catch (e) {
+        console.error("Failed to fetch applications:", e);
+      }
+    }
+    fetchJobsData();
+  }, []);
 
   const statusConfig: Record<string, { color: string; bg: string }> = {
     "Ready to Apply": { color: "#ff6b35", bg: "rgba(255,107,53,0.1)" },
