@@ -23,12 +23,13 @@ app = FastAPI(
     title="IntelliJob API",
     description="Autonomous AI Career Agent",
     version="0.1.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    root_path="/backend"
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],  # Vite default ports
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://h208.me", "http://h208.me"],  # Vite default ports and production domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -53,6 +54,11 @@ from src.api.auth import router as auth_router
 
 app.include_router(auth_router, prefix="/api")
 app.include_router(router, prefix="/api")
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
 
 if __name__ == "__main__":
     import uvicorn
