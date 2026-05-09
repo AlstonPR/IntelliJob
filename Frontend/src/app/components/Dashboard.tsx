@@ -18,7 +18,7 @@
  */
 
 import { motion, AnimatePresence } from "motion/react";
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, ReactNode, useRef } from "react";
 import { useNavigate } from "react-router";
 import {
   LayoutDashboard, Upload, Brain, Target, Bell, Settings,
@@ -29,6 +29,7 @@ import {
   BookOpen, Activity, Cpu, AlertCircle
 } from "lucide-react";
 import { Logo } from "./Logo";
+import { IntelliJobAPI } from "../../api/client";
 
 // TODO: Integrate LangGraph orchestration backend here
 // TODO: Connect Greenhouse API integration
@@ -48,7 +49,7 @@ const navItems = [
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
-function Sidebar({ active, setActive }: { active: string; setActive: (id: string) => void }) {
+function Sidebar({ active, setActive, user }: { active: string; setActive: (id: string) => void; user: any }) {
   const navigate = useNavigate();
   return (
     <motion.div
@@ -109,12 +110,12 @@ function Sidebar({ active, setActive }: { active: string; setActive: (id: string
       </nav>
 
       <div className="flex items-center gap-3 px-2 pt-4 mt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #6b2d8b, #c4541a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8rem", color: "#fff", fontWeight: 700, flexShrink: 0 }}>A</div>
+        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #6b2d8b, #c4541a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8rem", color: "#fff", fontWeight: 700, flexShrink: 0 }}>{user.name.charAt(0).toUpperCase()}</div>
         <div className="overflow-hidden">
-          <div style={{ color: "#a8a8b3", fontSize: "0.8rem", fontWeight: 600 }}>Alex Chen</div>
-          <div style={{ color: "#3a3a4a", fontSize: "0.68rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>alex@example.com</div>
+          <div style={{ color: "#a8a8b3", fontSize: "0.8rem", fontWeight: 600 }}>{user.name}</div>
+          <div style={{ color: "#3a3a4a", fontSize: "0.68rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>
         </div>
-        <motion.button whileHover={{ color: "#ff6b35" }} onClick={() => navigate("/login")}
+        <motion.button whileHover={{ color: "#ff6b35" }} onClick={() => { localStorage.removeItem("token"); navigate("/login"); }}
           style={{ background: "none", border: "none", color: "#3a3a4a", cursor: "pointer", marginLeft: "auto", flexShrink: 0 }}>
           <LogOut size={14} />
         </motion.button>
@@ -124,10 +125,10 @@ function Sidebar({ active, setActive }: { active: string; setActive: (id: string
 }
 
 // ─── USER OVERVIEW PANEL (AI Profile Intelligence) ────────────────────────────
-function UserOverviewPanel() {
+function UserOverviewPanel({ user }: { user: any }) {
   // TODO: Replace with real data from GET /api/applications and resume parser
   const profile = {
-    name: "Alex Chen",
+    name: user.name,
     detectedRole: "Senior Product Designer / Design Engineer",
     experience: "5 years",
     domain: "Design Systems & Frontend Engineering",
@@ -158,7 +159,7 @@ function UserOverviewPanel() {
           className="md:col-span-2"
           style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "1.5rem" }}>
           <div className="flex items-center gap-4 mb-4">
-            <div style={{ width: 52, height: 52, borderRadius: "50%", background: "linear-gradient(135deg, #6b2d8b, #c4541a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.3rem", color: "#fff", fontWeight: 700, flexShrink: 0 }}>A</div>
+            <div style={{ width: 52, height: 52, borderRadius: "50%", background: "linear-gradient(135deg, #6b2d8b, #c4541a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.3rem", color: "#fff", fontWeight: 700, flexShrink: 0 }}>{user.name.charAt(0).toUpperCase()}</div>
             <div>
               <div style={{ color: "#fff", fontWeight: 700, fontSize: "1.05rem", fontFamily: "'Space Grotesk', sans-serif" }}>{profile.name}</div>
               <div style={{ color: "#ff9d7a", fontSize: "0.8rem" }}>{profile.detectedRole}</div>
@@ -250,7 +251,7 @@ function UserOverviewPanel() {
 }
 
 // ─── DASHBOARD HOME ────────────────────────────────────────────────────────────
-function DashboardHome({ setActive }: { setActive: (id: string) => void }) {
+function DashboardHome({ setActive, user }: { setActive: (id: string) => void; user: any }) {
   // TODO: Fetch real stats from GET /api/applications and GET /api/jobs
   const stats = [
     { label: "Approved Matches", value: "4", delta: "from inbox", icon: Target, color: "#ff6b35" },
@@ -282,12 +283,26 @@ function DashboardHome({ setActive }: { setActive: (id: string) => void }) {
 
   return (
     <div className="space-y-8">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-        <div style={{ color: "#3a3a4a", fontSize: "0.75rem", letterSpacing: "0.12em", marginBottom: 4 }}>GOOD EVENING</div>
-        <h1 style={{ fontSize: "clamp(1.8rem, 3vw, 2.5rem)", fontWeight: 700, color: "#fff", fontFamily: "'Space Grotesk', sans-serif", letterSpacing: "-0.02em", lineHeight: 1.1 }}>Alex Chen.</h1>
-        <p style={{ color: "#5a5a6e", fontSize: "0.95rem", marginTop: 8 }}>
-          <span style={{ color: "#ff9d7a" }}>4 approved job matches</span> waiting for you. AI is hunting, applying & preparing — all in the background.
-        </p>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="flex justify-between items-start">
+        <div>
+          <div style={{ color: "#3a3a4a", fontSize: "0.75rem", letterSpacing: "0.12em", marginBottom: 4 }}>GOOD EVENING</div>
+          <h1 style={{ fontSize: "clamp(1.8rem, 3vw, 2.5rem)", fontWeight: 700, color: "#fff", fontFamily: "'Space Grotesk', sans-serif", letterSpacing: "-0.02em", lineHeight: 1.1 }}>{user.name}.</h1>
+          <p style={{ color: "#5a5a6e", fontSize: "0.95rem", marginTop: 8 }}>
+            <span style={{ color: "#ff9d7a" }}>4 approved job matches</span> waiting for you. AI is hunting, applying & preparing — all in the background.
+          </p>
+        </div>
+        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+          onClick={async () => {
+            try {
+              await IntelliJobAPI.triggerAgent();
+              alert("Agent triggered! Check your email in a few minutes.");
+            } catch (e) {
+              alert("Failed to trigger agent.");
+            }
+          }}
+          style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)", color: "#4ade80", borderRadius: 10, padding: "10px 20px", fontSize: "0.85rem", fontWeight: 600, cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif", display: "flex", gap: "8px", alignItems: "center" }}>
+          <Sparkles size={16} /> Trigger AI Agent
+        </motion.button>
       </motion.div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -372,14 +387,47 @@ function ResumePanel() {
   const [dragging, setDragging] = useState(false);
   const [uploaded, setUploaded] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [fileName, setFileName] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleUpload = () => {
-    // TODO: Connect file upload backend here
-    // TODO: Store uploaded PDF securely (Firebase Storage / Supabase Storage)
-    // TODO: Trigger AI resume parsing pipeline — POST /api/resume/optimize
+  useEffect(() => {
+    IntelliJobAPI.getResumeStatus().then((data) => {
+      if (data.uploaded) {
+        setUploaded(true);
+        setFileName(data.filename);
+      }
+    }).catch(console.error);
+  }, []);
+
+  const handleFile = async (file: File) => {
+    if (!file || file.type !== "application/pdf") {
+      alert("Please upload a PDF file.");
+      return;
+    }
     setUploaded(false);
     setAnalyzing(true);
-    setTimeout(() => { setAnalyzing(false); setUploaded(true); }, 1800);
+    try {
+      const res = await IntelliJobAPI.uploadResume(file);
+      setFileName(res.filename);
+      setUploaded(true);
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || "Upload failed.");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFile(file);
+  };
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
   };
 
   return (
@@ -390,11 +438,18 @@ function ResumePanel() {
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <input 
+          type="file" 
+          accept="application/pdf" 
+          ref={fileInputRef} 
+          style={{ display: "none" }} 
+          onChange={onFileChange} 
+        />
         <motion.div
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
-          onDrop={(e) => { e.preventDefault(); setDragging(false); handleUpload(); }}
-          onClick={!uploaded && !analyzing ? handleUpload : undefined}
+          onDrop={onDrop}
+          onClick={() => !uploaded && !analyzing && fileInputRef.current?.click()}
           whileHover={!uploaded && !analyzing ? { borderColor: "rgba(255,107,53,0.45)" } : {}}
           animate={dragging ? { scale: 1.02 } : { scale: 1 }}
           style={{
@@ -439,8 +494,8 @@ function ResumePanel() {
                   <FileText size={18} style={{ color: "#4ade80" }} />
                 </div>
                 <div>
-                  <div style={{ color: "#fff", fontSize: "0.875rem", fontWeight: 500 }}>Alex_Chen_Resume.pdf</div>
-                  <div style={{ color: "#4ade80", fontSize: "0.75rem" }}>✓ Analyzed successfully · 2.4 MB</div>
+                  <div style={{ color: "#fff", fontSize: "0.875rem", fontWeight: 500 }}>{fileName || "Resume.pdf"}</div>
+                  <div style={{ color: "#4ade80", fontSize: "0.75rem" }}>✓ Analyzed successfully</div>
                 </div>
               </div>
               {/* TODO: Connect delete/replace endpoint to remove file from storage */}
@@ -456,24 +511,46 @@ function ResumePanel() {
 }
 
 // ─── AI PREFERENCES ────────────────────────────────────────────────────────────
-function PreferencesPanel() {
-  const [text, setText] = useState("I want remote startup jobs with flexible timings, creative teams, good work-life balance, and strong growth opportunities. Salary range $120k–$160k. I value culture over brand name.");
+function PreferencesPanel({ user }: { user: any }) {
+  const [text, setText] = useState(user.preferences || "");
   const [saved, setSaved] = useState(false);
+  const [isEditing, setIsEditing] = useState(!user.preferences);
+  const [keywords, setKeywords] = useState<string[]>(user.preferences_keywords || []);
+  const [saving, setSaving] = useState(false);
 
-  // TODO: POST preferences to backend API — connect to LangGraph orchestration
-  // TODO: Trigger job re-scoring after preferences update
+  useEffect(() => {
+    if (!user.preferences) {
+      IntelliJobAPI.getResumeAnalysis().then((data) => {
+        if (data.status === "completed") {
+          const roles = data.suggested_roles?.slice(0, 2).join(" or ") || "Software Engineer";
+          const skills = data.extracted_skills?.slice(0, 4).join(", ") || "my core technologies";
+          setText(`I am looking for ${roles} positions. I am highly skilled in ${skills}. I prefer remote roles with good work-life balance, creative teams, and strong growth opportunities. Salary range $120k–$160k. I value culture over brand name.`);
+        } else {
+          setText("I want remote startup jobs with flexible timings, creative teams, good work-life balance, and strong growth opportunities. Salary range $120k–$160k. I value culture over brand name.");
+        }
+      }).catch(console.error);
+    }
+  }, [user.preferences]);
 
-  const extractedTags = [
-    { label: "Remote Work", color: "#6b2d8b" }, { label: "Startup", color: "#c4541a" },
-    { label: "Creative Team", color: "#ff6b35" }, { label: "$120k–$160k", color: "#ff9d7a" },
-    { label: "Flexible Hours", color: "#8b1a1a" }, { label: "Culture First", color: "#c084fc" },
-    { label: "Work-Life Balance", color: "#ff9d7a" }, { label: "High Growth", color: "#4ade80" },
+  const tagColors = [
+    "#6b2d8b", "#c4541a", "#ff6b35", "#ff9d7a", "#8b1a1a", "#c084fc", "#4ade80"
   ];
 
-  const handleSave = () => {
-    // TODO: POST /api/preferences — save user preferences and re-trigger workflow
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await IntelliJobAPI.updatePreferences(text);
+      user.preferences = text;
+      user.preferences_keywords = res.keywords || [];
+      setKeywords(res.keywords || []);
+      setSaved(true);
+      setIsEditing(false);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      console.error("Failed to save preferences:", e);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -482,8 +559,18 @@ function PreferencesPanel() {
         <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs mb-4" style={{ border: "1px solid rgba(192,132,252,0.3)", background: "rgba(192,132,252,0.06)", color: "#c084fc", letterSpacing: "0.1em" }}>
           <Wand2 size={11} /> AI PREFERENCE ENGINE
         </span>
-        <h2 style={{ color: "#fff", fontWeight: 700, fontSize: "1.6rem", fontFamily: "'Space Grotesk', sans-serif", marginBottom: 6 }}>AI Preferences</h2>
-        <p style={{ color: "#5a5a6e", fontSize: "0.9rem" }}>Write naturally. Tell the AI exactly what you want from your next role.</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 style={{ color: "#fff", fontWeight: 700, fontSize: "1.6rem", fontFamily: "'Space Grotesk', sans-serif", marginBottom: 6 }}>AI Preferences</h2>
+            <p style={{ color: "#5a5a6e", fontSize: "0.9rem" }}>Write naturally. Tell the AI exactly what you want from your next role.</p>
+          </div>
+          {!isEditing && (
+            <motion.button whileHover={{ borderColor: "rgba(192,132,252,0.5)", color: "#c084fc" }} onClick={() => setIsEditing(true)}
+              style={{ background: "rgba(192,132,252,0.1)", border: "1px solid rgba(192,132,252,0.2)", color: "#a8a8b3", borderRadius: 8, padding: "6px 14px", fontSize: "0.8rem", cursor: "pointer", transition: "all 0.2s" }}>
+              Edit Preferences
+            </motion.button>
+          )}
+        </div>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
@@ -495,30 +582,46 @@ function PreferencesPanel() {
           </motion.div>
           <span style={{ color: "#c084fc", fontSize: "0.72rem", letterSpacing: "0.12em" }}>DESCRIBE YOUR IDEAL JOB NATURALLY</span>
         </div>
-        <textarea value={text} onChange={(e) => { setText(e.target.value); setSaved(false); }} rows={6} placeholder="I want remote startup jobs with creative teams..."
-          style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "1rem", color: "#d4c4b0", fontSize: "0.95rem", lineHeight: 1.75, resize: "none", outline: "none", fontFamily: "'Inter', sans-serif", transition: "border-color 0.2s" }}
-          onFocus={(e) => (e.target.style.borderColor = "rgba(192,132,252,0.4)")}
-          onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.07)")}
-        />
+        
+        {isEditing ? (
+          <textarea value={text} onChange={(e) => { setText(e.target.value); setSaved(false); }} rows={6} placeholder="I want remote startup jobs with creative teams..."
+            style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "1rem", color: "#d4c4b0", fontSize: "0.95rem", lineHeight: 1.75, resize: "none", outline: "none", fontFamily: "'Inter', sans-serif", transition: "border-color 0.2s" }}
+            onFocus={(e) => (e.target.style.borderColor = "rgba(192,132,252,0.4)")}
+            onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.07)")}
+          />
+        ) : (
+          <div style={{ padding: "1rem", background: "rgba(192,132,252,0.02)", border: "1px solid rgba(192,132,252,0.1)", borderRadius: 12, color: "#d4c4b0", fontSize: "0.95rem", lineHeight: 1.75, fontFamily: "'Inter', sans-serif", whiteSpace: "pre-wrap" }}>
+            {text}
+          </div>
+        )}
+        
         <div className="mt-4">
           <div style={{ color: "#3a3a4a", fontSize: "0.7rem", letterSpacing: "0.12em", marginBottom: "0.75rem" }}>AI EXTRACTED SIGNALS</div>
           <div className="flex flex-wrap gap-2 mb-4">
-            {extractedTags.map((tag, i) => (
-              <motion.span key={tag.label} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 + i * 0.06 }}
-                whileHover={{ scale: 1.05 }} className="px-2.5 py-1 rounded-lg text-xs cursor-default"
-                style={{ background: `${tag.color}12`, border: `1px solid ${tag.color}30`, color: tag.color }}>
-                ✦ {tag.label}
-              </motion.span>
-            ))}
+            {keywords.length > 0 ? keywords.map((tag, i) => {
+              const color = tagColors[i % tagColors.length];
+              return (
+                <motion.span key={tag} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 + i * 0.05 }}
+                  whileHover={{ scale: 1.05 }} className="px-2.5 py-1 rounded-lg text-xs cursor-default"
+                  style={{ background: `${color}12`, border: `1px solid ${color}30`, color: color }}>
+                  ✦ {tag}
+                </motion.span>
+              );
+            }) : (
+              <span style={{ color: "#5a5a6e", fontSize: "0.8rem", fontStyle: "italic" }}>No signals extracted yet. Save preferences to analyze.</span>
+            )}
           </div>
         </div>
-        <div className="flex items-center justify-between">
-          <p style={{ color: "#3a3a4a", fontSize: "0.75rem" }}>{text.length} chars · AI updates matches on save</p>
-          <motion.button whileHover={{ scale: 1.04, background: saved ? "#22c55e" : "#e8876a" }} whileTap={{ scale: 0.97 }} onClick={handleSave}
-            style={{ background: saved ? "#22c55e" : "#ff6b35", color: "#fff", border: "none", borderRadius: 10, padding: "9px 22px", fontSize: "0.85rem", fontWeight: 600, cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif", transition: "all 0.3s", display: "flex", alignItems: "center", gap: "6px" }}>
-            {saved ? <><CheckCircle size={14} /> Saved</> : "Save Preferences"}
-          </motion.button>
-        </div>
+        
+        {isEditing && (
+          <div className="flex items-center justify-between">
+            <p style={{ color: "#3a3a4a", fontSize: "0.75rem" }}>{text.length} chars · AI updates matches on save</p>
+            <motion.button whileHover={{ scale: 1.04, background: saved ? "#22c55e" : "#e8876a" }} whileTap={{ scale: 0.97 }} onClick={handleSave} disabled={saving}
+              style={{ background: saved ? "#22c55e" : "#ff6b35", color: "#fff", border: "none", borderRadius: 10, padding: "9px 22px", fontSize: "0.85rem", fontWeight: 600, cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif", transition: "all 0.3s", display: "flex", alignItems: "center", gap: "6px", opacity: saving ? 0.7 : 1 }}>
+              {saved ? <><CheckCircle size={14} /> Saved</> : saving ? "Saving..." : "Save Preferences"}
+            </motion.button>
+          </div>
+        )}
       </motion.div>
 
       <div className="grid sm:grid-cols-2 gap-4">
@@ -541,13 +644,67 @@ function PreferencesPanel() {
 
 // ─── AI ANALYSIS ───────────────────────────────────────────────────────────────
 function AnalysisPanel() {
-  const skills = ["React", "Figma", "TypeScript", "User Research", "Prototyping", "Design Systems", "Next.js", "Motion Design"];
-  const weakAreas = ["Backend Dev", "Data Analysis"];
-  const roles = ["Product Designer", "Design Engineer", "UX Lead", "Creative Technologist"];
+  const [analysis, setAnalysis] = useState<any>(null);
+  const [gapData, setGapData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let interval: any;
+    const fetchAnalysis = async () => {
+      try {
+        const data = await IntelliJobAPI.getResumeAnalysis();
+        if (data.status === "completed") {
+          setAnalysis(data);
+          setLoading(false);
+          if (interval) clearInterval(interval);
+          
+          // Fetch gap analysis once resume analysis is ready
+          const gaps = await IntelliJobAPI.getGapAnalysis();
+          if (gaps && gaps.missing_skills) {
+            setGapData(gaps);
+          }
+        } else {
+          // Keep polling if it's pending (i.e. currently analyzing)
+          setLoading(true);
+        }
+      } catch (e) {
+        console.error("Failed to fetch analysis:", e);
+        setLoading(false);
+        if (interval) clearInterval(interval);
+      }
+    };
+    fetchAnalysis();
+    // Poll every 3 seconds while analyzing
+    interval = setInterval(fetchAnalysis, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          style={{ width: 44, height: 44, border: "2px solid rgba(192,132,252,0.2)", borderTopColor: "#c084fc", borderRadius: "50%" }} />
+        <span style={{ color: "#c084fc", fontSize: "0.875rem", marginTop: 12 }}>Fetching AI Analysis...</span>
+      </div>
+    );
+  }
+
+  if (!analysis) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-center">
+        <h2 style={{ color: "#fff", fontWeight: 700, fontSize: "1.6rem", fontFamily: "'Space Grotesk', sans-serif" }}>No Analysis Available</h2>
+        <p style={{ color: "#5a5a6e", fontSize: "0.9rem", marginTop: 8 }}>Please upload a resume in the Upload Resume tab to see your AI insights.</p>
+      </div>
+    );
+  }
+
+  const skills = analysis.extracted_skills || [];
+  const weakAreas = analysis.weak_areas || [];
+  const roles = analysis.suggested_roles || [];
   const metrics = [
-    { label: "ATS Score", value: 87, color: "#4ade80" },
-    { label: "Skills Match", value: 72, color: "#ff9d7a" },
-    { label: "Experience Level", value: 68, color: "#c084fc" },
+    { label: "ATS Score", value: analysis.ats_score, color: "#4ade80" },
+    { label: "Skills Match", value: analysis.skills_match, color: "#ff9d7a" },
+    { label: "Experience Level", value: analysis.experience_level, color: "#c084fc" },
   ];
 
   return (
@@ -596,14 +753,14 @@ function AnalysisPanel() {
         style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "1.5rem" }}>
         <h3 style={{ color: "#fff", fontWeight: 600, fontSize: "0.95rem", fontFamily: "'Space Grotesk', sans-serif", marginBottom: "1rem" }}>Extracted Skills</h3>
         <div className="flex flex-wrap gap-2">
-          {skills.map((skill, i) => (
+          {skills.map((skill: string, i: number) => (
             <motion.span key={skill} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4 + i * 0.05 }}
               className="px-3 py-1.5 rounded-lg text-sm"
               style={{ background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)", color: "#4ade80" }}>
               {skill}
             </motion.span>
           ))}
-          {weakAreas.map((area, i) => (
+          {weakAreas.map((area: string, i: number) => (
             <motion.span key={area} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.8 + i * 0.05 }}
               className="px-3 py-1.5 rounded-lg text-sm"
               style={{ background: "rgba(139,26,26,0.1)", border: "1px solid rgba(139,26,26,0.25)", color: "#f87171" }}>
@@ -612,44 +769,73 @@ function AnalysisPanel() {
           ))}
         </div>
       </motion.div>
+
+      {gapData && gapData.missing_skills && gapData.missing_skills.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+          style={{ background: "rgba(220,38,38,0.03)", border: "1px solid rgba(220,38,38,0.15)", borderRadius: 20, padding: "1.5rem" }}>
+          <div className="flex items-center gap-2 mb-4">
+            <AlertCircle size={16} style={{ color: "#ef4444" }} />
+            <h3 style={{ color: "#fff", fontWeight: 600, fontSize: "0.95rem", fontFamily: "'Space Grotesk', sans-serif" }}>Skill Gaps & Demands</h3>
+          </div>
+          <p style={{ color: "#a8a8b3", fontSize: "0.85rem", marginBottom: "1rem" }}>
+            The AI detected that you are requesting jobs requiring the following skills, but they are missing from your uploaded resume. Consider adding them to improve your matches:
+          </p>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {gapData.missing_skills.map((skill: string, i: number) => (
+              <span key={i} className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+                style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.25)", color: "#fca5a5" }}>
+                {skill}
+              </span>
+            ))}
+          </div>
+          {gapData.suggestions && gapData.suggestions.length > 0 && (
+            <div className="space-y-2 mt-4" style={{ borderTop: "1px solid rgba(220,38,38,0.1)", paddingTop: "1rem" }}>
+              <div style={{ color: "#fca5a5", fontSize: "0.7rem", letterSpacing: "0.1em", marginBottom: 8 }}>AI SUGGESTIONS</div>
+              {gapData.suggestions.map((suggestion: string, i: number) => (
+                <div key={i} className="flex items-start gap-2">
+                  <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#ef4444", marginTop: 8, flexShrink: 0 }} />
+                  <span style={{ color: "#a8a8b3", fontSize: "0.8rem", lineHeight: 1.5 }}>{suggestion}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      )}
     </div>
   );
 }
 
 // ─── APPROVED JOB MATCHES (with inline Interview Prep) ────────────────────────
-const INTERVIEW_PREP: Record<string, { technical: string[]; hr: string[]; behavioral: string[]; tips: string[]; skills: string[] }> = {
-  "Arc Browser": {
-    technical: ["Walk me through a complex design system you've built", "How do you handle conflicting stakeholder requirements?", "How do you measure design success with data?"],
-    hr: ["Why Arc specifically?", "Where do you see yourself in 5 years?", "Tell me about a time you failed and what you learned"],
-    behavioral: ["Describe a time you disagreed with an engineer on implementation", "How do you handle tight deadlines?"],
-    tips: ["Study Arc's design philosophy — they push browser UX boundaries", "Prepare 3 case studies emphasizing iterative design", "Know their team structure (small, high-ownership)"],
-    skills: ["Figma", "Design Systems", "User Research", "Prototyping"],
-  },
-  "Vercel": {
-    technical: ["Explain gradient descent and variants", "How would you design a job-matching ML pipeline?", "Describe transformer architecture and attention"],
-    hr: ["Why Vercel?", "How do you stay current with ML research?", "Describe experience with large-scale deployments"],
-    behavioral: ["Tell me about a model that underperformed in production", "How do you explain ML to non-technical stakeholders?"],
-    tips: ["Deep knowledge of Next.js ecosystem is essential", "Study Vercel's edge computing and AI infrastructure", "Prepare examples of ML systems you've scaled"],
-    skills: ["Python", "PyTorch", "MLOps", "System Design", "Statistics"],
-  },
-  "Figma": {
-    technical: ["How would you design a real-time collaboration feature?", "Explain your approach to performance optimization in design tools", "How do you handle complex vector operations in the browser?"],
-    hr: ["Why Figma and not Sketch or Adobe XD?", "What do you think the future of design tools looks like?"],
-    behavioral: ["Tell me about a time you shipped something used by millions", "How do you balance simplicity vs. power user features?"],
-    tips: ["Know Figma's multiplayer architecture deeply", "Research their recent AI features", "Understand WebGL and canvas rendering"],
-    skills: ["React", "TypeScript", "Design Systems", "WebGL", "Performance"],
-  },
-};
 
 function ApprovedJobsPanel() {
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>("technical");
-
-  // TODO: Fetch approved jobs from GET /api/applications (status: "Approved")
-  // TODO: POST /api/apply?job_id=X — trigger Playwright auto-apply
-  // TODO: POST /api/interview/questions?job_id=X — generate AI interview questions
+  const [prepData, setPrepData] = useState<Record<number, any>>({});
+  const [loadingPrep, setLoadingPrep] = useState<Record<number, boolean>>({});
 
   const [jobs, setJobs] = useState<any[]>([]);
+
+  const toggleCard = async (i: number, jobId: number) => {
+    if (expandedCard === i) {
+      setExpandedCard(null);
+      return;
+    }
+    setExpandedCard(i);
+    setExpandedSection("technical");
+    
+    if (!prepData[jobId]) {
+      setLoadingPrep(prev => ({ ...prev, [jobId]: true }));
+      try {
+        const data = await IntelliJobAPI.getInterviewQuestions(jobId);
+        setPrepData(prev => ({ ...prev, [jobId]: data }));
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoadingPrep(prev => ({ ...prev, [jobId]: false }));
+      }
+    }
+  };
+
 
   useEffect(() => {
     async function fetchJobsData() {
@@ -660,7 +846,7 @@ function ApprovedJobsPanel() {
           return {
             role: job.title,
             company: job.company,
-            salary: "$130k–$155k", // Placeholder for now
+            salary: job.salary_range || "Salary undisclosed",
             match: 95, // AI Score placeholder
             location: job.location || "Remote",
             status: "Ready to Apply",
@@ -708,16 +894,17 @@ function ApprovedJobsPanel() {
 
       <div className="space-y-4">
         {jobs.map((job, i) => {
-          const prep = INTERVIEW_PREP[job.company];
+          const prep = prepData[job.id];
+          const isLoading = loadingPrep[job.id];
           const isOpen = expandedCard === i;
           const sc = statusConfig[job.status];
 
           const prepSections = [
-            { id: "technical", label: "Technical Questions", count: prep?.technical.length || 0, color: "#ff6b35" },
-            { id: "hr", label: "HR Questions", count: prep?.hr.length || 0, color: "#c084fc" },
-            { id: "behavioral", label: "Behavioral", count: prep?.behavioral.length || 0, color: "#ff9d7a" },
-            { id: "tips", label: "Company Tips", count: prep?.tips.length || 0, color: "#4ade80" },
-            { id: "skills", label: "Skills to Revise", count: prep?.skills.length || 0, color: "#ff6b35" },
+            { id: "technical", label: "Technical Questions", count: prep?.technical?.length || 0, color: "#ff6b35" },
+            { id: "hr", label: "HR Questions", count: prep?.hr?.length || 0, color: "#c084fc" },
+            { id: "behavioral", label: "Behavioral", count: prep?.behavioral?.length || 0, color: "#ff9d7a" },
+            { id: "tips", label: "Company Tips", count: prep?.tips?.length || 0, color: "#4ade80" },
+            { id: "skills", label: "Skills to Revise", count: prep?.skills?.length || 0, color: "#ff6b35" },
           ];
 
           const sectionData: Record<string, string[]> = {
@@ -777,7 +964,7 @@ function ApprovedJobsPanel() {
                     )}
                     {/* Inline Interview Prep toggle */}
                     <motion.button whileHover={{ borderColor: "rgba(192,132,252,0.4)", color: "#c084fc" }} whileTap={{ scale: 0.96 }}
-                      onClick={() => setExpandedCard(isOpen ? null : i)}
+                      onClick={() => toggleCard(i, job.id)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs"
                       style={{ background: isOpen ? "rgba(192,132,252,0.12)" : "rgba(255,255,255,0.03)", border: `1px solid ${isOpen ? "rgba(192,132,252,0.3)" : "rgba(255,255,255,0.07)"}`, color: isOpen ? "#c084fc" : "#5a5a6e", cursor: "pointer", transition: "all 0.2s", fontFamily: "'Space Grotesk', sans-serif" }}>
                       <GraduationCap size={11} />
@@ -801,8 +988,13 @@ function ApprovedJobsPanel() {
                         <GraduationCap size={14} style={{ color: "#c084fc" }} />
                         <span style={{ color: "#c084fc", fontSize: "0.78rem", letterSpacing: "0.08em" }}>AI INTERVIEW PREPARATION — {job.role} @ {job.company}</span>
                       </div>
-                      {/* Accordion sections */}
-                      {prepSections.map((section) => (
+                      {isLoading ? (
+                        <div className="flex justify-center p-8">
+                          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            style={{ width: 24, height: 24, border: "2px solid rgba(192,132,252,0.2)", borderTopColor: "#c084fc", borderRadius: "50%" }} />
+                        </div>
+                      ) : (
+                        prepSections.map((section) => (
                         <div key={section.id} style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
                           <motion.button whileHover={{ background: "rgba(255,255,255,0.02)" }}
                             onClick={() => setExpandedSection(expandedSection === section.id ? null : section.id)}
@@ -848,7 +1040,7 @@ function ApprovedJobsPanel() {
                             )}
                           </AnimatePresence>
                         </div>
-                      ))}
+                      )))}
                     </div>
                   </motion.div>
                 )}
@@ -863,13 +1055,24 @@ function ApprovedJobsPanel() {
 
 // ─── PERSONALIZED RESUMES ──────────────────────────────────────────────────────
 function PersonalizedResumesPanel() {
-  // TODO: Fetch from GET /api/applications and resume storage
-  // TODO: POST /api/resume/optimize?user_id=1 to regenerate
-  const resumes = [
-    { role: "Senior Product Designer", company: "Arc Browser", timestamp: "May 8, 2025 · 2:14 PM", atsImprovement: { from: 74, to: 94 }, highlights: ["Emphasized design systems work", "Added ATS keywords from JD", "Restructured experience section"], color: "#6b2d8b" },
-    { role: "AI/ML Engineer", company: "Vercel", timestamp: "May 8, 2025 · 2:01 PM", atsImprovement: { from: 68, to: 91 }, highlights: ["Highlighted ML model deployments", "Added Python & PyTorch keywords", "Quantified performance metrics"], color: "#ff6b35" },
-    { role: "UX Research Lead", company: "Figma", timestamp: "May 7, 2025 · 9:45 AM", atsImprovement: { from: 71, to: 87 }, highlights: ["Focused on research methodologies", "Added Figma-specific keywords", "Rearranged skills section priority"], color: "#c4541a" },
-  ];
+  const [resumes, setResumes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    IntelliJobAPI.getTailoredResumes()
+      .then((data) => {
+        const colors = ["#6b2d8b", "#ff6b35", "#c4541a", "#8b1a1a"];
+        const mapped = data.resumes.map((r: any, idx: number) => ({
+          ...r,
+          color: colors[idx % colors.length]
+        }));
+        setResumes(mapped);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{ color: "#fff", padding: 20 }}>Loading resumes...</div>;
 
   return (
     <div className="space-y-6">
@@ -881,6 +1084,7 @@ function PersonalizedResumesPanel() {
         <p style={{ color: "#5a5a6e", fontSize: "0.9rem" }}>AI-tailored resumes generated for each approved role.</p>
       </motion.div>
       <div className="space-y-4">
+        {resumes.length === 0 && <div style={{ color: "#5a5a6e", padding: 20 }}>No tailored resumes yet. Approve a job match to generate one.</div>}
         {resumes.map((resume, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} whileHover={{ y: -2 }}
             style={{ background: "rgba(255,255,255,0.03)", borderLeft: `3px solid ${resume.color}`, borderTop: "1px solid rgba(255,255,255,0.07)", borderRight: "1px solid rgba(255,255,255,0.07)", borderBottom: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, overflow: "hidden", transition: "all 0.3s" }}>
@@ -891,7 +1095,7 @@ function PersonalizedResumesPanel() {
                     <FileCheck size={18} style={{ color: resume.color }} />
                   </div>
                   <div>
-                    <div style={{ color: "#fff", fontWeight: 600, fontSize: "0.95rem", fontFamily: "'Space Grotesk', sans-serif" }}>Resume for {resume.role}</div>
+                    <div style={{ color: "#fff", fontWeight: 600, fontSize: "0.95rem", fontFamily: "'Space Grotesk', sans-serif" }}>Resume for {resume.job_title}</div>
                     <div style={{ color: "#5a5a6e", fontSize: "0.78rem" }}>@ {resume.company}</div>
                   </div>
                 </div>
@@ -900,36 +1104,33 @@ function PersonalizedResumesPanel() {
                   <span style={{ color: "#4ade80", fontSize: "0.7rem" }}>Ready</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 mb-4 p-3 rounded-xl" style={{ background: "rgba(74,222,128,0.04)", border: "1px solid rgba(74,222,128,0.1)" }}>
-                <TrendingUp size={14} style={{ color: "#4ade80", flexShrink: 0 }} />
-                <div>
-                  <span style={{ color: "#3a3a4a", fontSize: "0.75rem" }}>ATS Score: </span>
-                  <span style={{ color: "#f87171", fontSize: "0.85rem", fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif" }}>{resume.atsImprovement.from}</span>
-                  <span style={{ color: "#3a3a4a", fontSize: "0.8rem" }}> → </span>
-                  <span style={{ color: "#4ade80", fontSize: "0.85rem", fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif" }}>{resume.atsImprovement.to}</span>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-1.5 mb-4">
-                {resume.highlights.map((h, idx) => (
-                  <span key={idx} className="px-2 py-1 rounded text-xs" style={{ background: `${resume.color}10`, border: `1px solid ${resume.color}20`, color: resume.color }}>{h}</span>
-                ))}
-              </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mt-4">
                 <div className="flex items-center gap-1.5" style={{ color: "#3a3a4a", fontSize: "0.72rem" }}>
-                  <Clock size={11} />{resume.timestamp}
+                  <Clock size={11} />{resume.created_at}
                 </div>
                 <div className="flex gap-2">
-                  {/* TODO: Preview endpoint — render PDF in modal */}
-                  <motion.button whileHover={{ borderColor: `${resume.color}50`, color: resume.color }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs"
-                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", color: "#5a5a6e", cursor: "pointer", transition: "all 0.2s", fontFamily: "'Space Grotesk', sans-serif" }}>
-                    <Eye size={12} /> Preview
-                  </motion.button>
-                  {/* TODO: Download endpoint — POST /api/resume/optimize → return PDF */}
                   <motion.button whileHover={{ background: resume.color, color: "#fff" }}
+                    onClick={async () => {
+                      try {
+                        const token = localStorage.getItem("token");
+                        const res = await fetch(`http://localhost:8000/api/resumes/${resume.id}/pdf`, {
+                          headers: { "Authorization": `Bearer ${token}` }
+                        });
+                        if (!res.ok) throw new Error("Failed to download");
+                        const blob = await res.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `tailored_resume_${resume.id}.pdf`;
+                        a.click();
+                      } catch (e) {
+                        console.error(e);
+                        alert("Failed to download PDF");
+                      }
+                    }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs"
                     style={{ background: `${resume.color}15`, border: `1px solid ${resume.color}30`, color: resume.color, cursor: "pointer", transition: "all 0.2s", fontFamily: "'Space Grotesk', sans-serif" }}>
-                    <Download size={12} /> Download
+                    <Download size={12} /> Download PDF
                   </motion.button>
                 </div>
               </div>
@@ -1109,24 +1310,110 @@ function SettingsPanel() {
   );
 }
 
+function JobApprovalModal({ jobId, onClose, onApprove }: { jobId: number; onClose: () => void; onApprove: () => void }) {
+  const [job, setJob] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [approving, setApproving] = useState(false);
+
+  useEffect(() => {
+    IntelliJobAPI.getJobDetails(jobId).then((data) => {
+      setJob(data);
+      setLoading(false);
+    }).catch(console.error);
+  }, [jobId]);
+
+  if (loading) return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        style={{ width: 44, height: 44, border: "2px solid rgba(192,132,252,0.2)", borderTopColor: "#c084fc", borderRadius: "50%" }} />
+    </div>
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+        style={{ background: "rgba(20,20,25,0.9)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 24, width: "100%", maxWidth: 600, overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "80vh" }}>
+        
+        <div className="p-6 pb-4 border-b border-white/5 flex justify-between items-start">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles size={14} style={{ color: "#c084fc" }} />
+              <span style={{ color: "#c084fc", fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>New AI Match</span>
+            </div>
+            <h2 style={{ color: "#fff", fontWeight: 700, fontSize: "1.4rem", fontFamily: "'Space Grotesk', sans-serif" }}>{job.title}</h2>
+            <div style={{ color: "#a8a8b3", fontSize: "0.9rem", marginTop: 4 }}>{job.company} · {job.location} · {job.salary_range || "Salary undisclosed"}</div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#5a5a6e", cursor: "pointer" }}><X size={20} /></button>
+        </div>
+
+        <div className="p-6 overflow-y-auto" style={{ color: "#d4c4b0", fontSize: "0.9rem", lineHeight: 1.6, whiteSpace: "pre-wrap", fontFamily: "'Inter', sans-serif" }}>
+          {job.description}
+        </div>
+
+        <div className="p-6 pt-4 border-t border-white/5 flex gap-3 justify-end bg-black/20">
+          <button onClick={onClose} style={{ background: "transparent", color: "#a8a8b3", border: "none", padding: "10px 20px", borderRadius: 10, cursor: "pointer", fontSize: "0.9rem", fontWeight: 500 }}>Decline</button>
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} disabled={approving}
+            onClick={async () => {
+              setApproving(true);
+              try {
+                await IntelliJobAPI.approveJob(jobId);
+                onApprove();
+              } catch (e) {
+                console.error(e);
+              } finally {
+                setApproving(false);
+              }
+            }}
+            style={{ background: "#c084fc", color: "#fff", border: "none", padding: "10px 24px", borderRadius: 10, cursor: "pointer", fontSize: "0.9rem", fontWeight: 600, display: "flex", gap: "8px", alignItems: "center", opacity: approving ? 0.7 : 1 }}>
+            {approving ? "Generating Tailored Resume..." : "Approve & Generate Resume"}
+          </motion.button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 // ─── MAIN DASHBOARD EXPORT ─────────────────────────────────────────────────────
 export function Dashboard() {
+  const navigate = useNavigate();
   const [activePanel, setActivePanel] = useState("dashboard");
+  const [user, setUser] = useState<any>(null);
+  const [approvalJobId, setApprovalJobId] = useState<number | null>(null);
+
+  useEffect(() => {
+    IntelliJobAPI.getUser()
+      .then(setUser)
+      .catch((e) => {
+        console.error(e);
+        navigate("/login");
+      });
+  }, [navigate]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("action") === "approve" && params.get("job_id")) {
+      setApprovalJobId(Number(params.get("job_id")));
+    }
+  }, []);
+
+  if (!user) {
+    return <div className="h-screen w-screen flex items-center justify-center text-white" style={{ background: "#080808" }}>Loading...</div>;
+  }
 
   const staticPanels: Record<string, ReactNode> = {
     resume: <ResumePanel />,
-    preferences: <PreferencesPanel />,
+    preferences: <PreferencesPanel user={user} />,
     analysis: <AnalysisPanel />,
     approved: <ApprovedJobsPanel />,
     resumes: <PersonalizedResumesPanel />,
     alerts: <AlertsPanel />,
     settings: <SettingsPanel />,
-    profile: <UserOverviewPanel />,
+    profile: <UserOverviewPanel user={user} />,
   };
 
   const renderPanel = () => {
-    if (activePanel === "dashboard") return <DashboardHome setActive={setActivePanel} />;
-    return staticPanels[activePanel] ?? <DashboardHome setActive={setActivePanel} />;
+    if (activePanel === "dashboard") return <DashboardHome setActive={setActivePanel} user={user} />;
+    return staticPanels[activePanel] ?? <DashboardHome setActive={setActivePanel} user={user} />;
   };
 
   return (
@@ -1134,7 +1421,7 @@ export function Dashboard() {
       <div className="pointer-events-none fixed inset-0 z-40" style={{ backgroundImage: GRAIN_SVG, backgroundSize: "200px 200px" }} />
       <div className="pointer-events-none fixed" style={{ width: 500, height: 500, top: -100, left: -100, background: "radial-gradient(circle, rgba(107,45,139,0.07) 0%, transparent 70%)", filter: "blur(40px)" }} />
 
-      <Sidebar active={activePanel} setActive={setActivePanel} />
+      <Sidebar active={activePanel} setActive={setActivePanel} user={user} />
 
       <div className="flex-1 overflow-y-auto relative z-10">
         <div className="max-w-5xl mx-auto p-8">
@@ -1151,6 +1438,23 @@ export function Dashboard() {
           </AnimatePresence>
         </div>
       </div>
+      
+      <AnimatePresence>
+        {approvalJobId && (
+          <JobApprovalModal 
+            jobId={approvalJobId} 
+            onClose={() => {
+              setApprovalJobId(null);
+              navigate("/dashboard", { replace: true });
+            }}
+            onApprove={() => {
+              setApprovalJobId(null);
+              setActivePanel("approved");
+              navigate("/dashboard", { replace: true });
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

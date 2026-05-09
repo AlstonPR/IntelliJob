@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
 import { useCursorGlow } from "./useCursorGlow";
 import { Logo } from "./Logo";
+import { IntelliJobAPI } from "../../api/client";
 
 // TODO: Add Firebase/Supabase/Auth backend here
 // Temporary dummy login for UI testing only
@@ -17,7 +18,9 @@ const DUMMY_PASSWORD = "demo1234";
 export function LoginPage() {
   const navigate = useNavigate();
   const cursor = useCursorGlow();
+  const [isRegistering, setIsRegistering] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
@@ -30,20 +33,27 @@ export function LoginPage() {
     { size: 100, x: "30%", y: "75%", color: "#ff9d7a", delay: 1.8 },
   ];
 
-  // TODO: Replace this entire function with real auth (Firebase/Supabase signIn)
   const handleLogin = async () => {
     setError("");
-    if (!email || !pass) {
-      setError("Please enter your email and password.");
+    if (!email || !pass || (isRegistering && !name)) {
+      setError("Please fill in all fields.");
       return;
     }
     setLoading(true);
-    // Temporary dummy authentication — any filled credentials succeed after a short delay
-    await new Promise((res) => setTimeout(res, 900));
-    // TODO: Replace below with: await signInWithEmailAndPassword(auth, email, password)
-    // or: await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false);
-    navigate("/dashboard");
+    try {
+      if (isRegistering) {
+        const res = await IntelliJobAPI.register(name, email, pass);
+        localStorage.setItem("token", res.access_token);
+      } else {
+        const res = await IntelliJobAPI.login(email, pass);
+        localStorage.setItem("token", res.access_token);
+      }
+      navigate("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Authentication failed.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // TODO: Replace with real Google OAuth (Firebase Google Sign-In / Supabase Google provider)
@@ -168,9 +178,11 @@ export function LoginPage() {
         >
           <div className="mb-8">
             <h2 className="text-white mb-1" style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em" }}>
-              Welcome back
+              {isRegistering ? "Create an account" : "Welcome back"}
             </h2>
-            <p style={{ color: "#5a5a6e", fontSize: "0.9rem" }}>Sign in to your IntelliJob account</p>
+            <p style={{ color: "#5a5a6e", fontSize: "0.9rem" }}>
+              {isRegistering ? "Join IntelliJob to automate your career" : "Sign in to your IntelliJob account"}
+            </p>
           </div>
 
           {/* Demo hint */}
@@ -188,6 +200,23 @@ export function LoginPage() {
           </motion.div>
 
           <div className="space-y-4">
+            {/* Name - Only for registration */}
+            {isRegistering && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
+                <label className="block mb-2 text-xs uppercase" style={{ color: "#5a5a6e", letterSpacing: "0.12em" }}>
+                  Name
+                </label>
+                <motion.input
+                  whileFocus={{ borderColor: "rgba(107,45,139,0.7)" }}
+                  type="text"
+                  value={name}
+                  onChange={(e) => { setName(e.target.value); setError(""); }}
+                  placeholder="Alex Chen"
+                  className="w-full outline-none mb-4"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "12px 16px", color: "#fff", fontSize: "0.9rem", transition: "border-color 0.2s" }}
+                />
+              </motion.div>
+            )}
             {/* Email */}
             <div>
               <label className="block mb-2 text-xs uppercase" style={{ color: "#5a5a6e", letterSpacing: "0.12em" }}>
@@ -292,12 +321,12 @@ export function LoginPage() {
           </div>
 
           <p className="mt-6 text-center" style={{ color: "#3a3a4a", fontSize: "0.8rem" }}>
-            No account?{" "}
+            {isRegistering ? "Already have an account?" : "No account?"}{" "}
             <button
-              onClick={() => navigate("/")}
+              onClick={() => { setIsRegistering(!isRegistering); setError(""); }}
               style={{ color: "#ff9d7a", background: "none", border: "none", cursor: "pointer" }}
             >
-              Get started free
+              {isRegistering ? "Sign in" : "Get started free"}
             </button>
           </p>
         </motion.div>

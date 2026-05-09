@@ -1,37 +1,46 @@
 from typing import Dict, Any
+import asyncio
 from src.agents.state import AgentState
 from src.database.core import SessionLocal
 from src.database.models import User, Preference, Job
+from src.agents.adzuna_tool import fetch_adzuna_jobs
 
 def preference_agent(state: AgentState) -> Dict[str, Any]:
     """
-    Analyze user preferences. For now, it mocks extraction or just returns state.
+    Analyze user preferences and store them in the state or context.
     """
-    state["messages"].append("Preference agent analyzed user profile.")
+    user_id = state.get("user_id")
+    with SessionLocal() as db:
+        pref = db.query(Preference).filter(Preference.user_id == user_id).first()
+        if pref:
+            # We could store this in state, but for now we just log it.
+            state["messages"].append(f"Loaded preferences for user {user_id}: {pref.preferred_roles}")
     return state
 
 def discovery_agent(state: AgentState) -> Dict[str, Any]:
     """
-    Mocks fetching jobs continuously from APIs.
+    Fetches jobs from Adzuna API based on user preferences.
     """
-    mock_jobs = [
-        {
-            "title": "Backend Software Engineer",
-            "company": "Tech Startup AI",
-            "location": "Remote",
-            "description": "Looking for a FastAPI and Python expert to build AI pipelines.",
-            "apply_url": "https://example.com/apply/1",
-            "source": "Mock API"
-        },
-        {
-            "title": "Data Scientist",
-            "company": "Big Corp",
-            "location": "New York",
-            "description": "Analyzing large datasets. Pandas and SQL required.",
-            "apply_url": "https://example.com/apply/2",
-            "source": "Mock API"
-        }
-    ]
+    user_id = state.get("user_id")
+    query = "Software Engineer" # Default
+    with SessionLocal() as db:
+        pref = db.query(Preference).filter(Preference.user_id == user_id).first()
+        if pref and pref.preferred_roles:
+            query = pref.preferred_roles.split(",")[0].strip()
+    
+    mock_jobs = asyncio.run(fetch_adzuna_jobs(query=query, limit=10))
+    if not mock_jobs:
+        mock_jobs = [
+            {
+                "title": "Backend Software Engineer",
+                "company": "Tech Startup AI",
+                "location": "Remote",
+                "description": "Looking for a FastAPI and Python expert to build AI pipelines.",
+                "apply_url": "https://example.com/apply/1",
+                "source": "Mock API"
+            }
+        ]
+
     state["discovered_jobs"] = mock_jobs
     state["messages"].append(f"Discovery agent found {len(mock_jobs)} jobs.")
     return state
