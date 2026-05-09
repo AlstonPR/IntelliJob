@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>IntelliJob AI Copilot</title>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      width: 320px;
+      padding: 16px;
+      margin: 0;
+      background-color: #0f172a; /* Tailwind slate-900 */
+      color: #f8fafc; /* Tailwind slate-50 */
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.25rem;
+      color: #38bdf8; /* Tailwind light blue */
+    }
+    p {
+      font-size: 0.875rem;
+      color: #cbd5e1;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      background: linear-gradient(to right, #3b82f6, #8b5cf6);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    #status {
+      margin-top: 12px;
+      font-size: 0.8rem;
+      text-align: center;
+      color: #a78bfa;
+    }
+  </style>
+</head>
+<body>
+  <h2>IntelliJob AI</h2>
+  <p>Your agentic AI job application assistant.</p>
+  
+  <button id="scan-btn">Scan & Autofill Form</button>
+  <button id="dashboard-btn" style="background: #334155;">Open Dashboard</button>
+  
+  <div id="status"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
