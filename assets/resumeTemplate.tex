@@ -1,0 +1,126 @@
+\documentclass[11pt]{article}
+
+\usepackage[letterpaper,
+top=0.5in,
+bottom=0.5in,
+left=0.5in,
+right=0.5in]{geometry}
+
+\usepackage{XCharter}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage[normalem]{ulem}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+
+\raggedright
+\pagestyle{empty}
+
+\titleformat{\section}{\bfseries\large}{}{0pt}{}[\vspace{1pt}\titlerule\vspace{-6.5pt}]
+\renewcommand\labelitemi{$\vcenter{\hbox{\small$\bullet$}}$}
+\setlist[itemize]{itemsep=-2pt, leftmargin=12pt, topsep=7pt}
+
+\begin{document}
+
+%----------NAME----------
+\centerline{\Huge <<NAME>>}
+
+\vspace{5pt}
+
+%----------CONTACT----------
+\centerline{
+\href{mailto:<<EMAIL>>}{<<EMAIL>>} ~|~
+\href{<<GITHUB_URL>>}{<<GITHUB_DISPLAY>>} ~|~
+\href{<<LINKEDIN_URL>>}{<<LINKEDIN_DISPLAY>>}
+}
+
+\vspace{-10pt}
+
+%----------EDUCATION----------
+\section*{Education}
+
+\textbf{<<COLLEGE_NAME>>} \hfill \textbf{<<COLLEGE_DURATION>>} \\
+\textit{<<DEGREE>>} \hfill \textit{<<COLLEGE_LOCATION>>} \\
+\textbf{CGPA:} <<CGPA>>
+
+\vspace{4pt}
+
+\textbf{<<PRE_UNIVERSITY_COLLEGE>>} \hfill \textbf{<<PU_DURATION>>} \\
+\textit{<<PU_COURSE>>} \hfill \textit{<<PU_LOCATION>>} \\
+\textbf{Percentage:} <<PU_PERCENTAGE>>
+
+%----------SKILLS----------
+\section*{Technical Skills}
+
+\begin{tabular}{ l l }
+\textbf{Languages} & <<LANGUAGES>> \\
+\textbf{Web} & <<WEB_TECHNOLOGIES>> \\
+\textbf{Frameworks} & <<FRAMEWORKS>> \\
+\textbf{Tools} & <<TOOLS>> \\
+\textbf{Databases} & <<DATABASES>> \\
+\textbf{Coursework} & <<COURSEWORK>> \\
+\end{tabular}
+
+\vspace{-6pt}
+
+%----------PROJECTS----------
+\section*{Projects}
+
+\textbf{<<PROJECT_1_NAME>> | <<PROJECT_1_TECH_STACK>>}
+\hfill
+\uline{\href{<<PROJECT_1_GITHUB_URL>>}{GitHub}} \\
+\vspace{2pt}
+
+\textit{<<PROJECT_1_SHORT_DESCRIPTION>>}
+
+\vspace{-6pt}
+
+\begin{itemize}[leftmargin=*]
+\item <<PROJECT_1_POINT_1>>
+\item <<PROJECT_1_POINT_2>>
+\item <<PROJECT_1_POINT_3>>
+\item <<PROJECT_1_POINT_4>>
+\end{itemize}
+
+\vspace{-6pt}
+
+\textbf{<<PROJECT_2_NAME>> | <<PROJECT_2_TECH_STACK>>}
+\hfill
+\uline{\href{<<PROJECT_2_GITHUB_URL>>}{GitHub}} \\
+\vspace{2pt}
+
+\textit{<<PROJECT_2_SHORT_DESCRIPTION>>}
+
+\vspace{-6pt}
+
+\begin{itemize}[leftmargin=*]
+\item <<PROJECT_2_POINT_1>>
+\item <<PROJECT_2_POINT_2>>
+\item <<PROJECT_2_POINT_3>>
+\item <<PROJECT_2_POINT_4>>
+\end{itemize}
+
+%----------CERTIFICATIONS----------
+\section*{Courses and Certifications}
+
+\begin{itemize}[leftmargin=*]
+\item <<CERTIFICATION_1>>
+\item <<CERTIFICATION_2>>
+\item <<CERTIFICATION_3>>
+\item <<CERTIFICATION_4>>
+\end{itemize}
+
+\vspace{-8pt}
+
+%----------LEADERSHIP----------
+\section*{Leadership \& Extracurricular Activities}
+
+\begin{itemize}[leftmargin=*]
+\item <<LEADERSHIP_POINT_1>>
+\item <<LEADERSHIP_POINT_2>>
+\end{itemize}
+
+\vspace{-8pt}
+
+\end{document}
