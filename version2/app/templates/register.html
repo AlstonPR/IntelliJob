@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-2xl mx-auto glass p-8 rounded-2xl shadow-2xl">
+    <h2 class="text-3xl font-bold mb-6 text-center">Create Account</h2>
+    <form id="registerForm" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm text-slate-300 mb-1">Full Name</label>
+                <input type="text" id="name" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white" required>
+            </div>
+            <div>
+                <label class="block text-sm text-slate-300 mb-1">Email</label>
+                <input type="email" id="email" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white" required>
+            </div>
+        </div>
+        
+        <div>
+            <label class="block text-sm text-slate-300 mb-1">GitHub Username (Optional)</label>
+            <input type="text" id="github_username" placeholder="e.g. octocat" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white">
+            <p class="text-xs text-slate-400 mt-1">If provided, we'll fetch your public repos to tailor your resume.</p>
+        </div>
+        
+        <div>
+            <label class="block text-sm text-slate-300 mb-1">Password</label>
+            <input type="password" id="password" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white" required>
+        </div>
+
+        <div class="border-t border-slate-700 pt-4">
+            <h3 class="text-lg font-semibold mb-4 text-emerald-400">Preferences</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-slate-300 mb-1">Preferred Roles</label>
+                    <input type="text" id="preferred_roles" placeholder="e.g. Backend Developer" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-300 mb-1">Work Mode</label>
+                    <select id="work_mode" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white">
+                        <option value="Remote">Remote</option>
+                        <option value="Hybrid">Hybrid</option>
+                        <option value="Onsite">Onsite</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-300 mb-1">Experience Level</label>
+                    <select id="experience_level" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white">
+                        <option value="Entry">Entry Level</option>
+                        <option value="Mid">Mid Level</option>
+                        <option value="Senior">Senior Level</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-300 mb-1">Preferred Locations</label>
+                    <input type="text" id="preferred_locations" placeholder="e.g. New York, Remote" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2">
+                </div>
+            </div>
+            
+            <input type="hidden" id="preferred_domains" value="Tech">
+            <input type="hidden" id="company_preference" value="Startup">
+        </div>
+
+        <div class="border-t border-slate-700 pt-4">
+            <h3 class="text-lg font-semibold mb-4 text-emerald-400">Resume Upload (Required)</h3>
+            <div class="flex items-center justify-center w-full">
+                <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-600 border-dashed rounded-lg cursor-pointer bg-slate-800 hover:bg-slate-700 transition">
+                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                        <svg class="w-8 h-8 mb-4 text-slate-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                        </svg>
+                        <p class="mb-2 text-sm text-slate-400"><span class="font-semibold">Click to upload</span> PDF</p>
+                    </div>
+                    <input id="resume" type="file" class="hidden" accept=".pdf" required />
+                </label>
+            </div>
+            <p id="fileName" class="text-sm text-slate-400 mt-2 text-center"></p>
+        </div>
+
+        <button type="submit" id="submitBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg transition mt-4">
+            Create Account & Parse Resume
+        </button>
+    </form>
+</div>
+
+<script>
+    document.getElementById('resume').addEventListener('change', function() {
+        if(this.files[0]) {
+            document.getElementById('fileName').innerText = this.files[0].name;
+        }
+    });
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn');
+        btn.innerText = 'Processing (This takes a moment)...';
+        btn.disabled = true;
+
+        const formData = new FormData();
+        formData.append('name', document.getElementById('name').value);
+        formData.append('email', document.getElementById('email').value);
+        formData.append('password', document.getElementById('password').value);
+        formData.append('preferred_roles', document.getElementById('preferred_roles').value);
+        formData.append('work_mode', document.getElementById('work_mode').value);
+        formData.append('experience_level', document.getElementById('experience_level').value);
+        formData.append('preferred_locations', document.getElementById('preferred_locations').value);
+        formData.append('preferred_domains', document.getElementById('preferred_domains').value);
+        formData.append('company_preference', document.getElementById('company_preference').value);
+        formData.append('github_username', document.getElementById('github_username').value || '');
+        formData.append('resume', document.getElementById('resume').files[0]);
+
+        const res = await fetch('/auth/register', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (res.ok) {
+            alert('Registered successfully! Please login.');
+            window.location.href = '/login';
+        } else {
+            const data = await res.json();
+            alert('Registration failed: ' + data.detail);
+            btn.innerText = 'Create Account & Parse Resume';
+            btn.disabled = false;
+        }
+    });
+</script>
+{% endblock %}

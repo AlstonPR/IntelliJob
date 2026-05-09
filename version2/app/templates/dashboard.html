@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="lg:col-span-1 space-y-6">
+        <div class="glass p-6 rounded-2xl">
+            <h3 class="text-xl font-bold mb-4 text-emerald-400">Profile Overview</h3>
+            <div id="profile-info" class="text-slate-300">Loading...</div>
+        </div>
+        <div class="glass p-6 rounded-2xl">
+            <h3 class="text-xl font-bold mb-4 text-blue-400">Parsed Skills</h3>
+            <ul id="skills-list" class="list-disc list-inside text-sm text-slate-300 space-y-1">Loading...</ul>
+        </div>
+    </div>
+    
+    <div class="lg:col-span-2 space-y-6">
+        <div class="glass p-6 rounded-2xl flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-bold">Autonomous Discovery</h2>
+                <p class="text-slate-400 text-sm mt-1">Agent is ready to discover and rank jobs based on your profile.</p>
+            </div>
+            <button onclick="discoverJobs()" id="discoverBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-bold transition">
+                Run Discovery Agent
+            </button>
+        </div>
+        
+        <div id="jobs-container" class="space-y-4">
+            <!-- Jobs injected here -->
+        </div>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/login';
+
+    async function loadProfile() {
+        const res = await fetch('/user/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if(res.ok) {
+            const data = await res.json();
+            document.getElementById('profile-info').innerHTML = `
+                <p><span class="font-bold">Name:</span> ${data.name}</p>
+                <p><span class="font-bold">Email:</span> ${data.email}</p>
+                <p><span class="font-bold">Roles:</span> ${data.preferences.preferred_roles}</p>
+                <p><span class="font-bold">Experience:</span> ${data.preferences.experience_level}</p>
+            `;
+            const skillsHtml = data.skills.map(s => `<li>${s.skill_name} <span class="text-xs text-slate-500">(${s.confidence_level})</span></li>`).join('');
+            document.getElementById('skills-list').innerHTML = skillsHtml || 'No skills parsed yet.';
+        }
+    }
+
+    async function discoverJobs() {
+        const btn = document.getElementById('discoverBtn');
+        btn.innerText = 'Agent Running...';
+        btn.disabled = true;
+
+        const res = await fetch('/jobs/discover', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if(res.ok) {
+            alert('Discovery complete! Jobs have been ranked.');
+            window.location.href = '/jobs';
+        } else {
+            alert('Failed to discover jobs.');
+            btn.innerText = 'Run Discovery Agent';
+            btn.disabled = false;
+        }
+    }
+
+    loadProfile();
+</script>
+{% endblock %}

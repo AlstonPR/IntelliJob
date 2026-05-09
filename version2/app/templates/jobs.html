@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h2 class="text-3xl font-bold mb-6">Ranked Job Matches</h2>
+    <p class="text-slate-400 mb-8">Review the jobs ranked by our AI. Approve a job to automatically generate a tailored resume and interview questions.</p>
+    
+    <div id="jobs-list" class="space-y-6">
+        Loading matches...
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/login';
+
+    async function loadJobs() {
+        const res = await fetch('/jobs/ranked', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            const container = document.getElementById('jobs-list');
+            
+            if (data.length === 0) {
+                container.innerHTML = '<div class="glass p-8 text-center rounded-xl text-slate-400">No jobs found yet. Go to Dashboard to run the Discovery Agent.</div>';
+                return;
+            }
+
+            container.innerHTML = data.map(item => `
+                <div class="glass p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-slate-700">
+                    <div class="flex-grow">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="bg-blue-900 text-blue-300 text-xs font-bold px-2 py-1 rounded">Score: ${item.score}</span>
+                            <h3 class="text-xl font-bold text-white">${item.job.title}</h3>
+                        </div>
+                        <p class="text-emerald-400 font-semibold mb-2">${item.job.company}</p>
+                        <p class="text-sm text-slate-300 mb-3">${(item.job.description || 'No description provided').substring(0, 150)}...</p>
+                        <div class="bg-slate-800 p-3 rounded-lg text-sm text-slate-400 border border-slate-700">
+                            <span class="font-semibold text-slate-200">AI Reasoning:</span> ${item.reason}
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2 min-w-[140px]">
+                        <button onclick="approveJob(${item.job.id})" id="btn-${item.job.id}" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg transition w-full">
+                            Approve Match
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+
+    async function approveJob(jobId) {
+        const btn = document.getElementById(`btn-${jobId}`);
+        btn.innerText = 'Processing...';
+        btn.disabled = true;
+        btn.classList.replace('bg-emerald-600', 'bg-slate-600');
+
+        const res = await fetch(`/jobs/${jobId}/approve`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            if (data.resume_feedback) {
+                localStorage.setItem('resume_feedback', data.resume_feedback);
+            } else {
+                localStorage.removeItem('resume_feedback');
+            }
+            alert('Job approved! Agent generated resume and interview questions.');
+            window.location.href = `/interview/${jobId}`;
+        } else {
+            alert('Error approving job.');
+            btn.innerText = 'Approve Match';
+            btn.disabled = false;
+            btn.classList.replace('bg-slate-600', 'bg-emerald-600');
+        }
+    }
+
+    loadJobs();
+</script>
+{% endblock %}

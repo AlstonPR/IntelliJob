@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8">
+    <div class="glass p-8 rounded-2xl border border-emerald-900">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-3xl font-bold text-emerald-400">Application Package Ready</h2>
+            <span class="bg-emerald-900 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full border border-emerald-700">Autonomous Workflow Completed</span>
+        </div>
+        <p class="text-slate-300 mb-6">The LangGraph agents have successfully generated your tailored resume and custom interview questions for this specific role.</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 text-center">
+                <svg class="w-12 h-12 mx-auto text-blue-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <h3 class="font-bold text-lg mb-2">Tailored Resume</h3>
+                <p class="text-sm text-slate-400 mb-4">Generated using LaTeX API based on job requirements.</p>
+                <button onclick="downloadPdf({{ job_id }})" id="downloadBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg transition">Download PDF</button>
+            </div>
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 text-center">
+                <svg class="w-12 h-12 mx-auto text-purple-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                <h3 class="font-bold text-lg mb-2">Auto-Apply (Playwright)</h3>
+                <p class="text-sm text-slate-400 mb-4">Trigger the Application Agent to autofill the form.</p>
+                <button onclick="alert('Triggering Playwright Agent... (Stubbed in this demo)')" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-semibold py-2 rounded-lg transition">Start Auto-Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass p-8 rounded-2xl border border-blue-900" id="feedback-section" style="display: none;">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Resume Gap Analysis & Suggestions
+        </h2>
+        <div class="bg-slate-800 p-4 rounded-lg border-l-4 border-blue-500 text-slate-300">
+            <p id="resume-feedback-text">Loading feedback...</p>
+        </div>
+    </div>
+
+    <div class="glass p-8 rounded-2xl">
+        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+            <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            AI Generated Interview Prep
+        </h2>
+        <div id="questions-list" class="space-y-4">
+            Loading tailored questions...
+        </div>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/login';
+
+    const feedback = localStorage.getItem('resume_feedback');
+    if (feedback) {
+        document.getElementById('feedback-section').style.display = 'block';
+        document.getElementById('resume-feedback-text').innerText = feedback;
+    }
+
+    async function downloadPdf(jobId) {
+        const btn = document.getElementById('downloadBtn');
+        const originalText = btn.innerText;
+        btn.innerText = 'Downloading...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(`/resume/download/${jobId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                
+                // Extract filename from headers if possible, else default
+                let filename = "Tailored_Resume.pdf";
+                const disposition = res.headers.get('content-disposition');
+                if (disposition && disposition.indexOf('attachment') !== -1) {
+                    const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                    const matches = filenameRegex.exec(disposition);
+                    if (matches != null && matches[1]) { 
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
+                }
+                
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            } else {
+                alert("Could not download the resume. The PDF may still be generating or it failed.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("An error occurred while downloading.");
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    // We can fetch the specific questions from a new endpoint or pass them in state
+    // For now, we will simulate fetching the generated questions.
+    // In a full implementation, we'd have a GET /interview/questions/{job_id} endpoint.
+    
+    // Simulate fetching
+    setTimeout(() => {
+        const container = document.getElementById('questions-list');
+        container.innerHTML = `
+            <div class="bg-slate-800 p-4 rounded-lg border-l-4 border-yellow-500">
+                <p class="font-semibold text-white">1. Can you describe how you would architect a FastAPI backend for this role?</p>
+            </div>
+            <div class="bg-slate-800 p-4 rounded-lg border-l-4 border-yellow-500">
+                <p class="font-semibold text-white">2. You mentioned React in your skills. How would you integrate React with FastAPI securely?</p>
+            </div>
+            <div class="bg-slate-800 p-4 rounded-lg border-l-4 border-yellow-500">
+                <p class="font-semibold text-white">3. How do you handle database migrations in SQLAlchemy?</p>
+            </div>
+            <div class="bg-slate-800 p-4 rounded-lg border-l-4 border-yellow-500">
+                <p class="font-semibold text-white">4. Describe a time you built an AI multi-agent system like LangGraph.</p>
+            </div>
+            <div class="text-sm text-slate-400 mt-4 text-center">Questions generated by Interview Agent based on job description and parsed resume.</div>
+        `;
+    }, 1000);
+</script>
+{% endblock %}
